@@ -7,7 +7,7 @@ DIRECTORY = "."
 
 def clean_chapter_names():
     target_dir = Path(DIRECTORY)
-    pattern = re.compile(r"(?i)(?:Chapter|Ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?$")
+    pattern = re.compile(r"(?i)(?:Chapter|Ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
 
     print("⚠️ EXECUTING REAL RENAME...\n")
 
@@ -16,14 +16,15 @@ def clean_chapter_names():
         if match:
             chapter_num = match.group(1)
             raw_title = match.group(2).strip()
+            is_opt = match.group(3)
             
-            # Clean up any leading hyphens or spaces
-            clean_title = re.sub(r"^[-–—\s]+", "", raw_title)
+            clean_title = re.sub(r"^[-–—_\s]+", "", raw_title)
+            opt_suffix = "_opt" if is_opt else ""
 
             if clean_title:
-                new_name = f"Chapter {chapter_num} - {clean_title}.cbz"
+                new_name = f"Chapter {chapter_num} - {clean_title}{opt_suffix}.cbz"
             else:
-                new_name = f"Chapter {chapter_num}.cbz"
+                new_name = f"Chapter {chapter_num}{opt_suffix}.cbz"
 
             new_path = file_path.with_name(new_name)
 
