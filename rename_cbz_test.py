@@ -34,29 +34,35 @@ def clean_chapter_names():
     target_dir = Path(DIRECTORY)
     pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
 
-    # Step 1: Base options
     option = get_user_choice()
 
-    # Step 2: Pre-scan for leading zeros
-    strip_zeros = False
+    # Pre-scan for zero-padding and find max digits
+    max_digits = 0
     has_zeros = False
+    
     for file_path in target_dir.glob("*.cbz"):
         match = pattern.search(file_path.stem)
-        # Check if the number starts with '0' followed by another digit (e.g., 01, 007)
-        if match and re.search(r"^0+\d", match.group(2)):
-            has_zeros = True
-            break
+        if match:
+            int_part = match.group(2).split('.')[0]
+            if len(int_part) > max_digits:
+                max_digits = len(int_part)
+            if re.search(r"^0+\d", int_part):
+                has_zeros = True
 
+    pad_zeros = False
+    strip_zeros = False
+    
     if has_zeros:
         print("\n--- Zero-Padding Detected ---")
-        print("1. Keep leading zeros   (e.g., Chapter 0001.cbz)")
-        print("2. Remove leading zeros (e.g., Chapter 1.cbz)")
+        print(f"1. Standardize/Add leading zeros (e.g., Chapter {str(1).zfill(max_digits)}.cbz)")
+        print("2. Remove all leading zeros      (e.g., Chapter 1.cbz)")
         while True:
             z_choice = input("Enter choice (1-2): ").strip()
-            if z_choice == '2':
-                strip_zeros = True
+            if z_choice == '1':
+                pad_zeros = True
                 break
-            elif z_choice == '1':
+            elif z_choice == '2':
+                strip_zeros = True
                 break
             print("Invalid choice. Please enter 1 or 2.")
 
@@ -70,11 +76,15 @@ def clean_chapter_names():
             raw_title = match.group(3) or ""
             is_opt = match.group(4)
             
-            # Clean up the chapter number if requested
-            if strip_zeros:
+            # Apply padding or stripping to the chapter number
+            if pad_zeros:
+                parts = chapter_num.split('.')
+                parts[0] = parts[0].zfill(max_digits)
+                chapter_num = '.'.join(parts)
+            elif strip_zeros:
                 chapter_num = chapter_num.lstrip('0')
                 if not chapter_num or chapter_num.startswith('.'):
-                    chapter_num = '0' + chapter_num # Restores '0' or '0.5' properly
+                    chapter_num = '0' + chapter_num
 
             group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-[]")
             title = re.sub(r"^[-–—_\s]+", "", raw_title).strip(" _-")
