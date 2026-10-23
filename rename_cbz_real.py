@@ -34,8 +34,7 @@ def clean_chapter_names():
     target_dir = Path(DIRECTORY)
     option = get_user_choice()
 
-    # Fixed Regex: Moved (?i) to the very beginning
-    pattern = re.compile(r"(?i)^(.*?_)?(?:Vol\.\d+\s+)?(?:Chapter|Ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
 
     print(f"\n⚠️ EXECUTING REAL RENAME for Option {option}...\n")
 
@@ -47,7 +46,7 @@ def clean_chapter_names():
             raw_title = match.group(3) or ""
             is_opt = match.group(4)
             
-            group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-")
+            group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-[]")
             title = re.sub(r"^[-–—_\s]+", "", raw_title).strip(" _-")
             opt_suffix = "_opt" if is_opt else ""
 

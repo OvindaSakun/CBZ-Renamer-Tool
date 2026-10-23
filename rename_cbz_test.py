@@ -21,11 +21,9 @@ def get_user_choice():
 def format_new_name(option, group_name, chapter_num, title, opt_suffix):
     parts = [f"Chapter {chapter_num}"]
     
-    # Add Title if option 2 or 3 (and a title actually exists)
     if option in (2, 3) and title:
         parts.append(f"- {title}")
         
-    # Add Group if option 2 or 4 (and a group actually exists)
     if option in (2, 4) and group_name:
         parts.append(f"[{group_name}]")
         
@@ -36,8 +34,8 @@ def clean_chapter_names():
     target_dir = Path(DIRECTORY)
     option = get_user_choice()
 
-    # Fixed Regex: Moved (?i) to the very beginning
-    pattern = re.compile(r"(?i)^(.*?_)?(?:Vol\.\d+\s+)?(?:Chapter|Ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+    # Highly flexible Regex: Handles any Volume format (Vol.4, Vol 4, Vol. 4,) and any Group prefix
+    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
 
     print(f"\n🔍 DRY RUN: Simulating Option {option}...\n")
     
@@ -49,12 +47,10 @@ def clean_chapter_names():
             raw_title = match.group(3) or ""
             is_opt = match.group(4)
             
-            # Clean up extracted parts
-            group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-")
+            group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-[]")
             title = re.sub(r"^[-–—_\s]+", "", raw_title).strip(" _-")
             opt_suffix = "_opt" if is_opt else ""
 
-            # Build the new name
             new_name = format_new_name(option, group_name, chapter_num, title, opt_suffix)
             new_path = file_path.with_name(new_name)
 
