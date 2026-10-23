@@ -32,10 +32,33 @@ def format_new_name(option, group_name, chapter_num, title, opt_suffix):
 
 def clean_chapter_names():
     target_dir = Path(DIRECTORY)
+    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+
+    # Step 1: Base options
     option = get_user_choice()
 
-    # Highly flexible Regex: Handles any Volume format (Vol.4, Vol 4, Vol. 4,) and any Group prefix
-    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+    # Step 2: Pre-scan for leading zeros
+    strip_zeros = False
+    has_zeros = False
+    for file_path in target_dir.glob("*.cbz"):
+        match = pattern.search(file_path.stem)
+        # Check if the number starts with '0' followed by another digit (e.g., 01, 007)
+        if match and re.search(r"^0+\d", match.group(2)):
+            has_zeros = True
+            break
+
+    if has_zeros:
+        print("\n--- Zero-Padding Detected ---")
+        print("1. Keep leading zeros   (e.g., Chapter 0001.cbz)")
+        print("2. Remove leading zeros (e.g., Chapter 1.cbz)")
+        while True:
+            z_choice = input("Enter choice (1-2): ").strip()
+            if z_choice == '2':
+                strip_zeros = True
+                break
+            elif z_choice == '1':
+                break
+            print("Invalid choice. Please enter 1 or 2.")
 
     print(f"\n🔍 DRY RUN: Simulating Option {option}...\n")
     
@@ -47,6 +70,12 @@ def clean_chapter_names():
             raw_title = match.group(3) or ""
             is_opt = match.group(4)
             
+            # Clean up the chapter number if requested
+            if strip_zeros:
+                chapter_num = chapter_num.lstrip('0')
+                if not chapter_num or chapter_num.startswith('.'):
+                    chapter_num = '0' + chapter_num # Restores '0' or '0.5' properly
+
             group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-[]")
             title = re.sub(r"^[-–—_\s]+", "", raw_title).strip(" _-")
             opt_suffix = "_opt" if is_opt else ""

@@ -32,9 +32,30 @@ def format_new_name(option, group_name, chapter_num, title, opt_suffix):
 
 def clean_chapter_names():
     target_dir = Path(DIRECTORY)
+    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+
     option = get_user_choice()
 
-    pattern = re.compile(r"(?i)^(.*?)(?:vol[\.\s]*\d+[\s,]*)?(?:chapter|ch\.?)\s*([\d\.]+)(.*?)(?:_[a-fA-F0-9]{6,8})?(_opt)?$")
+    strip_zeros = False
+    has_zeros = False
+    for file_path in target_dir.glob("*.cbz"):
+        match = pattern.search(file_path.stem)
+        if match and re.search(r"^0+\d", match.group(2)):
+            has_zeros = True
+            break
+
+    if has_zeros:
+        print("\n--- Zero-Padding Detected ---")
+        print("1. Keep leading zeros   (e.g., Chapter 0001.cbz)")
+        print("2. Remove leading zeros (e.g., Chapter 1.cbz)")
+        while True:
+            z_choice = input("Enter choice (1-2): ").strip()
+            if z_choice == '2':
+                strip_zeros = True
+                break
+            elif z_choice == '1':
+                break
+            print("Invalid choice. Please enter 1 or 2.")
 
     print(f"\n⚠️ EXECUTING REAL RENAME for Option {option}...\n")
 
@@ -46,6 +67,11 @@ def clean_chapter_names():
             raw_title = match.group(3) or ""
             is_opt = match.group(4)
             
+            if strip_zeros:
+                chapter_num = chapter_num.lstrip('0')
+                if not chapter_num or chapter_num.startswith('.'):
+                    chapter_num = '0' + chapter_num
+
             group_name = re.sub(r"_+(\s*_+)*$", "", raw_group).strip(" _-[]")
             title = re.sub(r"^[-–—_\s]+", "", raw_title).strip(" _-")
             opt_suffix = "_opt" if is_opt else ""
